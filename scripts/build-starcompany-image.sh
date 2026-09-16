@@ -8,6 +8,9 @@ Usage:
 
 Optional environment variables:
   APP_REPO             Default: https://github.com/olan823/starcompany_integration.git
+  ERPNEXT_REPO         Default: https://github.com/frappe/erpnext.git
+  ERPNEXT_BRANCH       Default: version-16
+  FRAPPE_REPO          Default: https://github.com/frappe/frappe.git
   IMAGE_NAME           Default: skychip/erpnext
   FRAPPE_BRANCH        Default: version-16
   FRAPPE_IMAGE_PREFIX  Default: frappe
@@ -19,6 +22,9 @@ EOF
 APP_REPO="${APP_REPO:-https://github.com/olan823/starcompany_integration.git}"
 APP_REF="${APP_REF:-}"
 APP_COMMIT="${APP_COMMIT:-}"
+ERPNEXT_REPO="${ERPNEXT_REPO:-https://github.com/frappe/erpnext.git}"
+ERPNEXT_BRANCH="${ERPNEXT_BRANCH:-version-16}"
+FRAPPE_REPO="${FRAPPE_REPO:-https://github.com/frappe/frappe.git}"
 IMAGE_NAME="${IMAGE_NAME:-skychip/erpnext}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 FRAPPE_BRANCH="${FRAPPE_BRANCH:-version-16}"
@@ -73,6 +79,10 @@ trap 'rm -f "$apps_json"' EXIT
 cat >"$apps_json" <<EOF
 [
   {
+    "url": "$ERPNEXT_REPO",
+    "branch": "$ERPNEXT_BRANCH"
+  },
+  {
     "url": "$APP_REPO",
     "branch": "$APP_REF"
   }
@@ -81,9 +91,12 @@ EOF
 
 image="${IMAGE_NAME}:${IMAGE_TAG}"
 
+echo "Building $image with Frappe $FRAPPE_BRANCH, ERPNext $ERPNEXT_BRANCH, and starcompany_integration $APP_REF"
 docker buildx build \
+  --progress=plain \
   --platform "$PLATFORM" \
   --build-arg "FRAPPE_BRANCH=$FRAPPE_BRANCH" \
+  --build-arg "FRAPPE_PATH=$FRAPPE_REPO" \
   --build-arg "FRAPPE_IMAGE_PREFIX=$FRAPPE_IMAGE_PREFIX" \
   --build-arg "CACHE_BUST=$APP_COMMIT" \
   --build-arg "STARCOMPANY_EXPECTED_COMMIT=$APP_COMMIT" \
@@ -94,7 +107,8 @@ docker buildx build \
   "$repo_root"
 
 docker run --rm --entrypoint bash "$image" -lc \
-  'test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py &&
+  'test -d /home/frappe/frappe-bench/apps/erpnext/erpnext &&
+   test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py &&
    test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/starcompany/page/starcompany_console/starcompany_console.js &&
    grep -q "def update_authorization_pool_threshold" /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py'
 
