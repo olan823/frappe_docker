@@ -15,8 +15,8 @@ Optional environment variables:
   FRAPPE_REPO              Default: https://github.com/frappe/frappe.git
   FRAPPE_REF               Default: v16.32.0
   FRAPPE_COMMIT            Default: 5cba016e86b54b57f34a3864282b92300ef20fb0
-  FRAPPE_IMAGE_TAG         Default: version-16
-  FRAPPE_IMAGE_PREFIX      Default: frappe
+  FRAPPE_BUILD_IMAGE       Default: frappe/build:version-16 pinned by digest
+  FRAPPE_BASE_IMAGE        Default: frappe/base:version-16 pinned by digest
   GITHUB_PROXY_PREFIX      Default: empty (example: https://githubproxy.cc/)
   PLATFORM                 Default: linux/amd64
   PUSH                     Default: 0 (set to 1 to push after building)
@@ -31,8 +31,8 @@ ERPNEXT_COMMIT="${ERPNEXT_COMMIT:-81a6f97566b83609c3917404a560b673050e907d}"
 FRAPPE_REPO="${FRAPPE_REPO:-https://github.com/frappe/frappe.git}"
 FRAPPE_REF="${FRAPPE_REF:-v16.32.0}"
 FRAPPE_COMMIT="${FRAPPE_COMMIT:-5cba016e86b54b57f34a3864282b92300ef20fb0}"
-FRAPPE_IMAGE_TAG="${FRAPPE_IMAGE_TAG:-version-16}"
-FRAPPE_IMAGE_PREFIX="${FRAPPE_IMAGE_PREFIX:-frappe}"
+FRAPPE_BUILD_IMAGE="${FRAPPE_BUILD_IMAGE:-frappe/build:version-16@sha256:21a344db3edc383ab2f3da99c5d5a512ca00ab19de653ebc45736d692218a3c3}"
+FRAPPE_BASE_IMAGE="${FRAPPE_BASE_IMAGE:-frappe/base:version-16@sha256:9f39fe0bf68ca3d963c3e6d2ce049b449887f53ac255465470069bc867c0ab73}"
 GITHUB_PROXY_PREFIX="${GITHUB_PROXY_PREFIX:-}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 PUSH="${PUSH:-0}"
@@ -108,13 +108,13 @@ echo "Building fixed ERPNext base $image"
 docker buildx build \
   --progress=plain \
   --platform "$PLATFORM" \
-  --build-arg "FRAPPE_IMAGE_TAG=$FRAPPE_IMAGE_TAG" \
+  --build-arg "FRAPPE_BUILD_IMAGE=$FRAPPE_BUILD_IMAGE" \
+  --build-arg "FRAPPE_BASE_IMAGE=$FRAPPE_BASE_IMAGE" \
   --build-arg "FRAPPE_REF=$FRAPPE_REF" \
   --build-arg "FRAPPE_PATH=$FRAPPE_REPO" \
   --build-arg "FRAPPE_EXPECTED_COMMIT=$FRAPPE_COMMIT" \
   --build-arg "ERPNEXT_REF=$ERPNEXT_REF" \
   --build-arg "ERPNEXT_EXPECTED_COMMIT=$ERPNEXT_COMMIT" \
-  --build-arg "FRAPPE_IMAGE_PREFIX=$FRAPPE_IMAGE_PREFIX" \
   --build-arg "GITHUB_PROXY_PREFIX=$GITHUB_PROXY_PREFIX" \
   --secret "id=apps_json,src=$apps_json" \
   --file "$repo_root/images/layered/Containerfile" \

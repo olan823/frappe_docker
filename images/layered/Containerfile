@@ -1,7 +1,7 @@
-ARG FRAPPE_IMAGE_TAG=version-16
-ARG FRAPPE_IMAGE_PREFIX=frappe
+ARG FRAPPE_BUILD_IMAGE=frappe/build:version-16@sha256:21a344db3edc383ab2f3da99c5d5a512ca00ab19de653ebc45736d692218a3c3
+ARG FRAPPE_BASE_IMAGE=frappe/base:version-16@sha256:9f39fe0bf68ca3d963c3e6d2ce049b449887f53ac255465470069bc867c0ab73
 
-FROM ${FRAPPE_IMAGE_PREFIX}/build:${FRAPPE_IMAGE_TAG} AS builder
+FROM ${FRAPPE_BUILD_IMAGE} AS builder
 
 ARG FRAPPE_REF=v16.32.0
 ARG FRAPPE_PATH=https://github.com/frappe/frappe
@@ -41,7 +41,7 @@ RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1
   echo "{}" > sites/common_site_config.json && \
   find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
-FROM ${FRAPPE_IMAGE_PREFIX}/base:${FRAPPE_IMAGE_TAG} AS erpnext-base
+FROM ${FRAPPE_BASE_IMAGE} AS erpnext-base
 
 USER frappe
 

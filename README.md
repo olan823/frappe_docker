@@ -77,7 +77,7 @@ The full `frappe_docker` documentation is available in [`docs/`](docs/) and publ
 
 ## Starcompany Layered Images
 
-The production Starcompany image is built in two independent steps. The ERPNext base pins Frappe and ERPNext v16.32.0 to verified commits; normal Starcompany releases rebuild only the incremental app layer.
+The production Starcompany image is built in two independent steps. The ERPNext base pins the Frappe build/runtime parent images by digest and pins Frappe and ERPNext v16.32.0 to verified commits; normal Starcompany releases rebuild only the incremental app layer.
 
 Build the base image once, or whenever the pinned Frappe/ERPNext release changes:
 
