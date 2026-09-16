@@ -8,13 +8,10 @@ Usage:
 
 Optional environment variables:
   APP_REPO             Default: https://github.com/olan823/starcompany_integration.git
-  ERPNEXT_REPO         Default: https://github.com/frappe/erpnext.git
-  ERPNEXT_BRANCH       Default: version-16
-  FRAPPE_REPO          Default: https://github.com/frappe/frappe.git
+  BASE_IMAGE           Default: skychip/erpnext-base:16.32.0
+  BASE_RELEASE         Default: 16.32.0
   GITHUB_PROXY_PREFIX  Default: empty (example: https://githubproxy.cc/)
   IMAGE_NAME           Default: skychip/erpnext
-  FRAPPE_BRANCH        Default: version-16
-  FRAPPE_IMAGE_PREFIX  Default: frappe
   PLATFORM             Default: linux/amd64
   PUSH                 Default: 0 (set to 1 to push after building)
 EOF
@@ -23,14 +20,11 @@ EOF
 APP_REPO="${APP_REPO:-https://github.com/olan823/starcompany_integration.git}"
 APP_REF="${APP_REF:-}"
 APP_COMMIT="${APP_COMMIT:-}"
-ERPNEXT_REPO="${ERPNEXT_REPO:-https://github.com/frappe/erpnext.git}"
-ERPNEXT_BRANCH="${ERPNEXT_BRANCH:-version-16}"
-FRAPPE_REPO="${FRAPPE_REPO:-https://github.com/frappe/frappe.git}"
+BASE_IMAGE="${BASE_IMAGE:-skychip/erpnext-base:16.32.0}"
+BASE_RELEASE="${BASE_RELEASE:-16.32.0}"
 GITHUB_PROXY_PREFIX="${GITHUB_PROXY_PREFIX:-}"
 IMAGE_NAME="${IMAGE_NAME:-skychip/erpnext}"
 IMAGE_TAG="${IMAGE_TAG:-}"
-FRAPPE_BRANCH="${FRAPPE_BRANCH:-version-16}"
-FRAPPE_IMAGE_PREFIX="${FRAPPE_IMAGE_PREFIX:-frappe}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 PUSH="${PUSH:-0}"
 
@@ -42,6 +36,12 @@ fi
 
 if [[ ! "$APP_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
   echo "APP_COMMIT must be the full 40-character commit SHA referenced by APP_REF." >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ ! "$BASE_RELEASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "BASE_RELEASE must be a semantic version such as 16.32.0." >&2
   usage >&2
   exit 2
 fi
@@ -64,9 +64,14 @@ for command_name in docker git; do
   }
 done
 
-remote_commit="$(git ls-remote "$APP_REPO" "refs/tags/$APP_REF^{}" | awk 'NR == 1 {print $1}')"
+fetch_repo="$APP_REPO"
+if [[ -n "$GITHUB_PROXY_PREFIX" && "$APP_REPO" == https://github.com/* ]]; then
+  fetch_repo="${GITHUB_PROXY_PREFIX}${APP_REPO}"
+fi
+
+remote_commit="$(git ls-remote "$fetch_repo" "refs/tags/$APP_REF^{}" | awk 'NR == 1 {print $1}')"
 if [[ -z "$remote_commit" ]]; then
-  remote_commit="$(git ls-remote "$APP_REPO" "refs/tags/$APP_REF" | awk 'NR == 1 {print $1}')"
+  remote_commit="$(git ls-remote "$fetch_repo" "refs/tags/$APP_REF" | awk 'NR == 1 {print $1}')"
 fi
 
 if [[ "$remote_commit" != "$APP_COMMIT" ]]; then
@@ -75,42 +80,31 @@ if [[ "$remote_commit" != "$APP_COMMIT" ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-apps_json="$(mktemp)"
-trap 'rm -f "$apps_json"' EXIT
-
-cat >"$apps_json" <<EOF
-[
-  {
-    "url": "$ERPNEXT_REPO",
-    "branch": "$ERPNEXT_BRANCH"
-  },
-  {
-    "url": "$APP_REPO",
-    "branch": "$APP_REF"
-  }
-]
-EOF
 
 image="${IMAGE_NAME}:${IMAGE_TAG}"
 
-echo "Building $image with Frappe $FRAPPE_BRANCH, ERPNext $ERPNEXT_BRANCH, and starcompany_integration $APP_REF"
+echo "Building $image from $BASE_IMAGE with starcompany_integration $APP_REF"
 docker buildx build \
   --progress=plain \
   --platform "$PLATFORM" \
-  --build-arg "FRAPPE_BRANCH=$FRAPPE_BRANCH" \
-  --build-arg "FRAPPE_PATH=$FRAPPE_REPO" \
-  --build-arg "FRAPPE_IMAGE_PREFIX=$FRAPPE_IMAGE_PREFIX" \
+  --build-arg "BASE_IMAGE=$BASE_IMAGE" \
+  --build-arg "BASE_RELEASE=$BASE_RELEASE" \
+  --build-arg "APP_REPO=$APP_REPO" \
+  --build-arg "APP_REF=$APP_REF" \
+  --build-arg "APP_COMMIT=$APP_COMMIT" \
   --build-arg "GITHUB_PROXY_PREFIX=$GITHUB_PROXY_PREFIX" \
-  --build-arg "CACHE_BUST=$APP_COMMIT" \
-  --build-arg "STARCOMPANY_EXPECTED_COMMIT=$APP_COMMIT" \
-  --secret "id=apps_json,src=$apps_json" \
-  --file "$repo_root/images/layered/Containerfile" \
+  --file "$repo_root/images/layered/Containerfile.starcompany" \
   --tag "$image" \
   --load \
   "$repo_root"
 
-docker run --rm --entrypoint bash "$image" -lc \
+docker run --rm \
+  --env "EXPECTED_APP_BUILD=$APP_REF $APP_COMMIT" \
+  --entrypoint bash \
+  "$image" -lc \
   'test -d /home/frappe/frappe-bench/apps/erpnext/erpnext &&
+  test ! -e /home/frappe/frappe-bench/apps/starcompany_integration/.git &&
+   grep -Fxq "$EXPECTED_APP_BUILD" /home/frappe/frappe-bench/.starcompany-build &&
    test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py &&
    test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/starcompany/page/starcompany_console/starcompany_console.js &&
    grep -q "def update_authorization_pool_threshold" /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py'

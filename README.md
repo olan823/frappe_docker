@@ -75,6 +75,29 @@ The full `frappe_docker` documentation is available in [`docs/`](docs/) and publ
 
 > For Docker basics and best practices refer to Docker's [documentation](http://docs.docker.com)
 
+## Starcompany Layered Images
+
+The production Starcompany image is built in two independent steps. The ERPNext base pins Frappe and ERPNext v16.32.0 to verified commits; normal Starcompany releases rebuild only the incremental app layer.
+
+Build the base image once, or whenever the pinned Frappe/ERPNext release changes:
+
+```sh
+GITHUB_PROXY_PREFIX=https://githubproxy.cc/ \
+  ./scripts/build-erpnext-base-image.sh
+```
+
+Build the Starcompany layer from that base:
+
+```sh
+APP_REF=v0.1.1 \
+APP_COMMIT=437cc7a2923e6924cf926f2e8f6071518b8ffdf9 \
+IMAGE_TAG=16.32.0-starcompany-0.1.1 \
+GITHUB_PROXY_PREFIX=https://githubproxy.cc/ \
+  ./scripts/build-starcompany-image.sh
+```
+
+Set `PUSH=1` on either command to push its resulting image after local verification. Building does not stop or recreate any running Compose service; deployment remains a separate operation through `scripts/deploy-starcompany-image.sh`.
+
 ## Demo setup
 
 The fastest way to try Frappe locally is with the single-file demo setup in `pwd.yml`.

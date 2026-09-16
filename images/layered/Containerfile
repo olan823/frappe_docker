@@ -1,18 +1,18 @@
-ARG FRAPPE_BRANCH=version-16
+ARG FRAPPE_IMAGE_TAG=version-16
 ARG FRAPPE_IMAGE_PREFIX=frappe
 
-FROM ${FRAPPE_IMAGE_PREFIX}/build:${FRAPPE_BRANCH} AS builder
+FROM ${FRAPPE_IMAGE_PREFIX}/build:${FRAPPE_IMAGE_TAG} AS builder
 
-ARG FRAPPE_BRANCH=version-16
+ARG FRAPPE_REF=v16.32.0
 ARG FRAPPE_PATH=https://github.com/frappe/frappe
+ARG FRAPPE_EXPECTED_COMMIT=""
 ARG GITHUB_PROXY_PREFIX=""
-ARG CACHE_BUST=""
-ARG STARCOMPANY_EXPECTED_COMMIT=""
+ARG ERPNEXT_REF=v16.32.0
+ARG ERPNEXT_EXPECTED_COMMIT=""
 
 USER frappe
 
 RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1000 \
-  : "${CACHE_BUST}" && \
   if [ -n "${GITHUB_PROXY_PREFIX}" ]; then \
     git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/".insteadOf "https://github.com/"; \
     git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/frappe/gunicorn.git".insteadOf "https://github.com/frappe/gunicorn"; \
@@ -24,7 +24,7 @@ RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1
     export APP_INSTALL_ARGS="--apps_path=/opt/frappe/apps.json"; \
   fi && \
   bench init ${APP_INSTALL_ARGS}\
-    --frappe-branch=${FRAPPE_BRANCH} \
+    --frappe-branch=${FRAPPE_REF} \
     --frappe-path=${FRAPPE_PATH} \
     --no-procfile \
     --no-backups \
@@ -32,38 +32,19 @@ RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1
     --verbose \
     /home/frappe/frappe-bench && \
   cd /home/frappe/frappe-bench && \
-  if [ -n "${STARCOMPANY_EXPECTED_COMMIT}" ]; then \
-    test "$(git -C apps/starcompany_integration rev-parse HEAD)" = "${STARCOMPANY_EXPECTED_COMMIT}"; \
-  fi && \
+  test "$(git -C apps/frappe rev-parse HEAD)" = "${FRAPPE_EXPECTED_COMMIT}" && \
+  test "$(git -C apps/erpnext rev-parse HEAD)" = "${ERPNEXT_EXPECTED_COMMIT}" && \
+  printf 'frappe %s %s\nerpnext %s %s\n' \
+    "${FRAPPE_REF}" "${FRAPPE_EXPECTED_COMMIT}" \
+    "${ERPNEXT_REF}" "${ERPNEXT_EXPECTED_COMMIT}" \
+    > .erpnext-base-build && \
   echo "{}" > sites/common_site_config.json && \
   find apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
-FROM ${FRAPPE_IMAGE_PREFIX}/base:${FRAPPE_BRANCH} AS backend
+FROM ${FRAPPE_IMAGE_PREFIX}/base:${FRAPPE_IMAGE_TAG} AS erpnext-base
 
 USER frappe
 
 COPY --from=builder --chown=frappe:frappe /home/frappe/frappe-bench /home/frappe/frappe-bench
 
 WORKDIR /home/frappe/frappe-bench
-
-# Move assets to image-layer storage
-RUN cp -r /home/frappe/frappe-bench/sites/assets /home/frappe/frappe-bench/assets && \
-  rm -rf /home/frappe/frappe-bench/sites/assets
-
-VOLUME [ \
-  "/home/frappe/frappe-bench/sites", \
-  "/home/frappe/frappe-bench/logs" \
-]
-
-USER root
-# This entrypoint script link build assets of the image to the mounted sites volume at container initialization
-COPY resources/core/main-entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod 755 /usr/local/bin/entrypoint.sh
-
-COPY resources/core/start.sh /usr/local/bin/start.sh
-RUN chmod 755 /usr/local/bin/start.sh
-
-USER frappe
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-
-CMD ["start.sh"]
