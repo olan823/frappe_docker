@@ -15,6 +15,8 @@ RUN --mount=type=secret,id=apps_json,target=/opt/frappe/apps.json,uid=1000,gid=1
   : "${CACHE_BUST}" && \
   if [ -n "${GITHUB_PROXY_PREFIX}" ]; then \
     git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/".insteadOf "https://github.com/"; \
+    git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/frappe/gunicorn.git".insteadOf "https://github.com/frappe/gunicorn"; \
+    git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/frappe/pypika.git".insteadOf "https://github.com/frappe/pypika"; \
   fi && \
   export APP_INSTALL_ARGS="" && \
   if [ -f /opt/frappe/apps.json ] && [ -s /opt/frappe/apps.json ]; then \
