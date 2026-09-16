@@ -11,6 +11,7 @@ Optional environment variables:
   ERPNEXT_REPO         Default: https://github.com/frappe/erpnext.git
   ERPNEXT_BRANCH       Default: version-16
   FRAPPE_REPO          Default: https://github.com/frappe/frappe.git
+  GITHUB_PROXY_PREFIX  Default: empty (example: https://githubproxy.cc/)
   IMAGE_NAME           Default: skychip/erpnext
   FRAPPE_BRANCH        Default: version-16
   FRAPPE_IMAGE_PREFIX  Default: frappe
@@ -25,6 +26,7 @@ APP_COMMIT="${APP_COMMIT:-}"
 ERPNEXT_REPO="${ERPNEXT_REPO:-https://github.com/frappe/erpnext.git}"
 ERPNEXT_BRANCH="${ERPNEXT_BRANCH:-version-16}"
 FRAPPE_REPO="${FRAPPE_REPO:-https://github.com/frappe/frappe.git}"
+GITHUB_PROXY_PREFIX="${GITHUB_PROXY_PREFIX:-}"
 IMAGE_NAME="${IMAGE_NAME:-skychip/erpnext}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 FRAPPE_BRANCH="${FRAPPE_BRANCH:-version-16}"
@@ -98,6 +100,7 @@ docker buildx build \
   --build-arg "FRAPPE_BRANCH=$FRAPPE_BRANCH" \
   --build-arg "FRAPPE_PATH=$FRAPPE_REPO" \
   --build-arg "FRAPPE_IMAGE_PREFIX=$FRAPPE_IMAGE_PREFIX" \
+  --build-arg "GITHUB_PROXY_PREFIX=$GITHUB_PROXY_PREFIX" \
   --build-arg "CACHE_BUST=$APP_COMMIT" \
   --build-arg "STARCOMPANY_EXPECTED_COMMIT=$APP_COMMIT" \
   --secret "id=apps_json,src=$apps_json" \
