@@ -1,0 +1,42 @@
+ARG BASE_IMAGE=skychip/erpnext:16.32.0-starcompany-0.1.10
+
+FROM ${BASE_IMAGE} AS backend
+
+ARG APP_REPO=https://github.com/olan823/starcloud_integration.git
+ARG APP_REF
+ARG APP_COMMIT
+ARG GITHUB_PROXY_PREFIX=""
+
+USER frappe
+
+RUN if [ -n "${GITHUB_PROXY_PREFIX}" ]; then \
+    git config --global url."${GITHUB_PROXY_PREFIX}https://github.com/".insteadOf "https://github.com/"; \
+  fi && \
+  test -d apps/starcompany_integration && \
+  bench get-app \
+    --branch="${APP_REF}" \
+    starcloud_integration \
+    "${APP_REPO}" && \
+  test "$(git -C apps/starcloud_integration rev-parse HEAD)" = "${APP_COMMIT}" && \
+  printf '%s\n' "${APP_REF} ${APP_COMMIT}" > .starcloud-build && \
+  rm -rf apps/starcloud_integration/.git
+
+RUN cp -r /home/frappe/frappe-bench/sites/assets /home/frappe/frappe-bench/assets && \
+  rm -rf /home/frappe/frappe-bench/sites/assets
+
+VOLUME [ \
+  "/home/frappe/frappe-bench/sites", \
+  "/home/frappe/frappe-bench/logs" \
+]
+
+USER root
+COPY resources/core/main-entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh
+
+COPY resources/core/start.sh /usr/local/bin/start.sh
+RUN chmod 755 /usr/local/bin/start.sh
+
+USER frappe
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+CMD ["start.sh"]
