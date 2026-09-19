@@ -15,15 +15,17 @@ RUN if [ -n "${GITHUB_PROXY_PREFIX}" ]; then \
   test -d apps/starcompany_integration && \
   bench get-app \
     --branch="${APP_REF}" \
+    --skip-assets \
     starcloud_integration \
     "${APP_REPO}" && \
   test "$(git -C apps/starcloud_integration rev-parse HEAD)" = "${APP_COMMIT}" && \
-  bench build --app starcloud_integration && \
   printf '%s\n' "${APP_REF} ${APP_COMMIT}" > .starcloud-build && \
   rm -rf apps/starcloud_integration/.git
 
-RUN cp -a /home/frappe/frappe-bench/sites/assets/. /home/frappe/frappe-bench/assets/ && \
-  rm -rf /home/frappe/frappe-bench/sites/assets
+RUN mkdir -p /home/frappe/frappe-bench/assets/starcloud_integration && \
+  cp -a \
+    /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/public/. \
+    /home/frappe/frappe-bench/assets/starcloud_integration/
 
 VOLUME [ \
   "/home/frappe/frappe-bench/sites", \

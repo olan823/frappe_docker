@@ -97,6 +97,9 @@ docker run --rm \
    test ! -e /home/frappe/frappe-bench/apps/starcloud_integration/.git &&
    grep -Fxq "$EXPECTED_APP_BUILD" /home/frappe/frappe-bench/.starcloud-build &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/api/proxy.py &&
+    test -s /home/frappe/frappe-bench/assets/assets.json &&
+    test -n "$(find /home/frappe/frappe-bench/assets/frappe/dist/css -maxdepth 1 -type f -print -quit)" &&
+    test -n "$(find /home/frappe/frappe-bench/assets/frappe/dist/js -maxdepth 1 -type f -print -quit)" &&
     test -f /home/frappe/frappe-bench/assets/starcloud_integration/images/starcloud.svg &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/starcloud/page/starcloud_applications/starcloud_applications.js'
 
