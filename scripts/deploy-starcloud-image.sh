@@ -39,6 +39,7 @@ docker image inspect "$image" >/dev/null
 docker run --rm --entrypoint bash "$image" -lc \
   'test -d /home/frappe/frappe-bench/apps/starcompany_integration &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/api/proxy.py &&
+    test -f /home/frappe/frappe-bench/assets/starcloud_integration/images/starcloud.svg &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/starcloud/page/starcloud_applications/starcloud_applications.js'
 
 docker compose "${compose_args[@]}" config --quiet
