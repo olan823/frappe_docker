@@ -39,9 +39,7 @@ docker image inspect "$image" >/dev/null
 docker run --rm --entrypoint bash "$image" -lc \
   'test -d /home/frappe/frappe-bench/apps/starcompany_integration &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/api/proxy.py &&
-    test -s /home/frappe/frappe-bench/assets/assets.json &&
-    test -n "$(find /home/frappe/frappe-bench/assets/frappe/dist/css -maxdepth 1 -type f -print -quit)" &&
-    test -n "$(find /home/frappe/frappe-bench/assets/frappe/dist/js -maxdepth 1 -type f -print -quit)" &&
+    python -c '"'"'import json, pathlib; root = pathlib.Path("/home/frappe/frappe-bench/assets"); assets = json.loads((root / "assets.json").read_text()); required = ("website.bundle.css", "erpnext-web.bundle.css", "login.bundle.css"); missing = [key for key in required if not assets.get(key, "").startswith("/assets/") or not (root / assets.get(key, "").removeprefix("/assets/")).is_file()]; assert not missing, f"Missing or invalid asset mappings: {missing}"'"'"' &&
     test -f /home/frappe/frappe-bench/assets/starcloud_integration/images/starcloud.svg &&
    test -f /home/frappe/frappe-bench/apps/starcloud_integration/starcloud_integration/starcloud/page/starcloud_applications/starcloud_applications.js'
 

@@ -107,6 +107,8 @@ docker run --rm \
    grep -Fxq "$EXPECTED_APP_BUILD" /home/frappe/frappe-bench/.starcompany-build &&
    test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py &&
    test -f /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/starcompany/page/starcompany_console/starcompany_console.js &&
+  python -c '"'"'import json, pathlib; root = pathlib.Path("/home/frappe/frappe-bench/assets"); assets = json.loads((root / "assets.json").read_text()); required = ("website.bundle.css", "erpnext-web.bundle.css", "login.bundle.css"); missing = [key for key in required if not assets.get(key, "").startswith("/assets/") or not (root / assets.get(key, "").removeprefix("/assets/")).is_file()]; assert not missing, f"Missing or invalid asset mappings: {missing}"'"'"' &&
+  test -f /home/frappe/frappe-bench/assets/starcompany_integration/images/starcompany.svg &&
    grep -q "def update_authorization_pool_threshold" /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/api/proxy.py'
 
 if [[ "$PUSH" == "1" ]]; then

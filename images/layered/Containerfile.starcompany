@@ -16,13 +16,19 @@ RUN if [ -n "${GITHUB_PROXY_PREFIX}" ]; then \
   grep -Eq "^erpnext v${BASE_RELEASE} [0-9a-f]{40}$" .erpnext-base-build && \
   bench get-app \
     --branch="${APP_REF}" \
+    --skip-assets \
     starcompany_integration \
     "${APP_REPO}" && \
   test "$(git -C apps/starcompany_integration rev-parse HEAD)" = "${APP_COMMIT}" && \
   printf '%s\n' "${APP_REF} ${APP_COMMIT}" > .starcompany-build && \
   rm -rf apps/starcompany_integration/.git
 
-RUN cp -r /home/frappe/frappe-bench/sites/assets /home/frappe/frappe-bench/assets && \
+RUN mkdir -p /home/frappe/frappe-bench/sites/assets/starcompany_integration && \
+  cp -a \
+    /home/frappe/frappe-bench/apps/starcompany_integration/starcompany_integration/public/. \
+    /home/frappe/frappe-bench/sites/assets/starcompany_integration/ && \
+  mkdir -p /home/frappe/frappe-bench/assets && \
+  cp -a /home/frappe/frappe-bench/sites/assets/. /home/frappe/frappe-bench/assets/ && \
   rm -rf /home/frappe/frappe-bench/sites/assets
 
 VOLUME [ \

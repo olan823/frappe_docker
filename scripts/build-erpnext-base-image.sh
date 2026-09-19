@@ -132,7 +132,8 @@ docker run --rm \
    grep -Fxq "$EXPECTED_FRAPPE_BUILD" /home/frappe/frappe-bench/.erpnext-base-build &&
    grep -Fxq "$EXPECTED_ERPNEXT_BUILD" /home/frappe/frappe-bench/.erpnext-base-build &&
    test ! -e /home/frappe/frappe-bench/apps/frappe/.git &&
-   test ! -e /home/frappe/frappe-bench/apps/erpnext/.git'
+  test ! -e /home/frappe/frappe-bench/apps/erpnext/.git &&
+  python -c '"'"'import json, pathlib; root = pathlib.Path("/home/frappe/frappe-bench/sites/assets"); assets = json.loads((root / "assets.json").read_text()); required = ("website.bundle.css", "erpnext-web.bundle.css", "login.bundle.css"); missing = [key for key in required if not assets.get(key, "").startswith("/assets/") or not (root / assets.get(key, "").removeprefix("/assets/")).is_file()]; assert not missing, f"Missing or invalid asset mappings: {missing}"'"'"''
 
 if [[ "$PUSH" == "1" ]]; then
   docker push "$image"
