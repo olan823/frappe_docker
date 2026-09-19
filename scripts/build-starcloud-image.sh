@@ -8,7 +8,7 @@ Usage:
 
 Optional environment variables:
   APP_REPO             Default: https://github.com/olan823/starcloud_integration.git
-  BASE_IMAGE           Default: skychip/erpnext:16.32.0-starcompany-0.1.10
+  BASE_IMAGE           Default: skychip/erpnext:16.32.0-starcompany-0.1.11
   GITHUB_PROXY_PREFIX  Default: empty
   IMAGE_NAME           Default: skychip/erpnext
   PLATFORM             Default: linux/amd64
@@ -19,7 +19,7 @@ EOF
 APP_REPO="${APP_REPO:-https://github.com/olan823/starcloud_integration.git}"
 APP_REF="${APP_REF:-}"
 APP_COMMIT="${APP_COMMIT:-}"
-BASE_IMAGE="${BASE_IMAGE:-skychip/erpnext:16.32.0-starcompany-0.1.10}"
+BASE_IMAGE="${BASE_IMAGE:-skychip/erpnext:16.32.0-starcompany-0.1.11}"
 GITHUB_PROXY_PREFIX="${GITHUB_PROXY_PREFIX:-}"
 IMAGE_NAME="${IMAGE_NAME:-skychip/erpnext}"
 IMAGE_TAG="${IMAGE_TAG:-}"

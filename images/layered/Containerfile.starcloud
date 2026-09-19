@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=skychip/erpnext:16.32.0-starcompany-0.1.10
+ARG BASE_IMAGE=skychip/erpnext:16.32.0-starcompany-0.1.11
 
 FROM ${BASE_IMAGE} AS backend
 
